@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         全能翻译插件
+// @name         智能翻译助手
 // @namespace    https://viayoo.com/
-// @version      3.0.0
+// @version      1.0.0
 // @description  功能强大的网页翻译工具，支持多语言，可自定义配置，界面精美，支持移动端
-// @author       Eray Translate
+// @author       Eray
 // @run-at       document-start
 // @match        *://*/*
 // @grant        GM_setValue
