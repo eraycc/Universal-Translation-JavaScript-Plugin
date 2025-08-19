@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         智能翻译助手
-// @namespace    https://viayoo.com/
+// @namespace    http://tampermonkey.net/
 // @version      1.0.0
 // @description  功能强大的网页翻译工具，支持多语言，可自定义配置，界面精美，支持移动端
 // @author       Eray
@@ -10,7 +10,10 @@
 // @grant        GM_getValue
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
-// @require       https://unpkg.com/i18n-jsautotranslate@3.18.0/index.js
+// @license      Apache-2.0
+// @require      https://unpkg.com/i18n-jsautotranslate@3.18.0/index.js
+// @downloadURL https://update.greasyfork.org/scripts/546362/%E6%99%BA%E8%83%BD%E7%BF%BB%E8%AF%91%E5%8A%A9%E6%89%8B.user.js
+// @updateURL https://update.greasyfork.org/scripts/546362/%E6%99%BA%E8%83%BD%E7%BF%BB%E8%AF%91%E5%8A%A9%E6%89%8B.meta.js
 // ==/UserScript==
 
 (function() {
