@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         智能翻译助手
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      1.1.0
 // @description  功能强大的网页翻译工具，支持多语言，可自定义配置，界面精美，支持移动端
 // @author       Eray
 // @run-at       document-start
@@ -39,7 +39,10 @@
                 autoTranslate: false,
                 showFloatBall: true,
                 translateService: 'client.edge',
-                allowHalfBall: true
+                allowHalfBall: true,
+                panelPosition: null,
+                panelSize: isMobile() ? 0.9 : 1, // 移动端默认90%，PC端默认100%
+                panelOpacity: 1
             };
             const saved = GM_getValue('translateConfig', null);
             return saved ? { ...defaultConfig, ...saved } : defaultConfig;
@@ -47,6 +50,11 @@
 
         const config = getConfig();
         const mobile = isMobile();
+
+        // 检测深色模式
+        const isDarkMode = () => {
+            return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        };
 
         // 注入基础样式
         const baseStyles = `
@@ -137,6 +145,11 @@
                 || window.innerWidth <= 768;
         }
 
+        // 检测深色模式
+        function isDarkMode() {
+            return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+
         // 配置管理
         class ConfigManager {
             constructor() {
@@ -153,7 +166,10 @@
                     customTerms: {},
                     showFloatBall: true,
                     translateService: 'client.edge',
-                    allowHalfBall: true
+                    allowHalfBall: true,
+                    panelPosition: null,
+                    panelSize: isMobile() ? 0.9 : 1,
+                    panelOpacity: 1
                 };
                 this.config = this.loadConfig();
             }
@@ -184,6 +200,7 @@
                 this.initialized = false;
                 this.listenerStarted = false;
                 this.currentLanguage = null;
+                this.isTranslating = false;
             }
 
             init() {
@@ -212,15 +229,23 @@
                         translate.nomenclature.append(customTerms);
                     }
 
-                    // 只启动一次监听
-                    if (!this.listenerStarted) {
-                        translate.listener.start();
-                        this.listenerStarted = true;
-                    }
-                    
                     this.initialized = true;
                 } catch (error) {
                     console.error('翻译初始化失败:', error);
+                }
+            }
+
+            startListener() {
+                if (!this.listenerStarted && typeof translate !== 'undefined') {
+                    try {
+                        translate.listener.start();
+                        this.listenerStarted = true;
+                    } catch (error) {
+                        // 忽略重复启动的错误
+                        if (!error.message?.includes('已经启动')) {
+                            console.error('启动监听失败:', error);
+                        }
+                    }
                 }
             }
 
@@ -229,22 +254,35 @@
                 if (typeof translate === 'undefined') return;
                 
                 try {
+                    // 避免重复翻译到相同语言
+                    if (this.currentLanguage === targetLang && this.isTranslating) {
+                        return;
+                    }
+                    
                     this.currentLanguage = targetLang;
+                    this.isTranslating = true;
+                    
+                    // 确保监听器已启动
+                    this.startListener();
+                    
                     translate.changeLanguage(targetLang);
                 } catch (error) {
                     console.error('切换语言失败:', error);
+                    this.isTranslating = false;
                 }
             }
 
             toggle(enabled) {
                 if (enabled && !this.initialized) {
                     this.init();
+                    this.startListener();
                     if (this.configManager.get('autoTranslate')) {
                         setTimeout(() => {
                             this.changeLanguage(this.configManager.get('targetLanguage'));
                         }, 100);
                     }
                 } else if (!enabled && this.initialized) {
+                    this.isTranslating = false;
                     this.changeLanguage(this.configManager.get('localLanguage'));
                 }
             }
@@ -253,6 +291,7 @@
                 if (!this.initialized) this.init();
                 if (typeof translate !== 'undefined') {
                     try {
+                        this.startListener();
                         translate.execute();
                     } catch (error) {
                         console.error('执行翻译失败:', error);
@@ -269,7 +308,9 @@
                 this.floatBall = document.getElementById('translate-float-ball');
                 this.panel = null;
                 this.isDragging = false;
+                this.isPanelDragging = false;
                 this.dragOffset = { x: 0, y: 0 };
+                this.panelDragOffset = { x: 0, y: 0 };
                 this.touchStartPos = { x: 0, y: 0 };
                 this.touchStartTime = 0;
                 
@@ -292,7 +333,62 @@
 
             injectStyles() {
                 const mobile = isMobile();
+                const darkMode = isDarkMode();
+                
                 GM_addStyle(`
+                    /* 深色模式支持 */
+                    ${darkMode ? `
+                        #translate-panel {
+                            background: #1e1e1e !important;
+                            color: #e0e0e0 !important;
+                        }
+                        
+                        .translate-panel-header {
+                            background: linear-gradient(135deg, #4a5eb7 0%, #5a3d7a 100%) !important;
+                        }
+                        
+                        .translate-control-label {
+                            color: #e0e0e0 !important;
+                        }
+                        
+                        .translate-select {
+                            background: #2d2d2d !important;
+                            color: #e0e0e0 !important;
+                            border-color: #444 !important;
+                        }
+                        
+                        .translate-select:focus {
+                            border-color: #667eea !important;
+                        }
+                        
+                        .translate-select option {
+                            background: #2d2d2d !important;
+                            color: #e0e0e0 !important;
+                        }
+                        
+                        .translate-slider {
+                            background: #444 !important;
+                        }
+                        
+                        .translate-slider-value {
+                            color: #b0b0b0 !important;
+                        }
+                        
+                        .translate-section-title {
+                            color: #e0e0e0 !important;
+                            border-bottom-color: #444 !important;
+                        }
+                        
+                        .translate-info {
+                            background: #2d2d2d !important;
+                            color: #b0b0b0 !important;
+                        }
+                        
+                        .translate-description {
+                            color: #999 !important;
+                        }
+                    ` : ''}
+                    
                     /* 悬浮球动画样式 */
                     #translate-float-ball:active {
                         transform: scale(0.95);
@@ -312,9 +408,6 @@
                     /* 控制面板样式 */
                     #translate-panel {
                         position: fixed;
-                        width: ${mobile ? '90%' : 'min(400px, 90vw)'};
-                        max-width: 400px;
-                        max-height: ${mobile ? '85vh' : '600px'};
                         background: white;
                         border-radius: 12px;
                         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -322,11 +415,9 @@
                         display: none;
                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
                         overflow: hidden;
-                        ${mobile ? `
-                            left: 50% !important;
-                            top: 50% !important;
-                            transform: translate(-50%, -50%);
-                        ` : ''}
+                        touch-action: none;
+                        user-select: none;
+                        -webkit-user-select: none;
                     }
 
                     #translate-panel.show {
@@ -334,14 +425,19 @@
                         animation: slideIn 0.3s ease;
                     }
 
+                    #translate-panel.dragging {
+                        transition: none !important;
+                        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.2);
+                    }
+
                     @keyframes slideIn {
                         from {
                             opacity: 0;
-                            transform: ${mobile ? 'translate(-50%, -45%)' : 'translateY(-20px)'};
+                            transform: translateY(-20px);
                         }
                         to {
                             opacity: 1;
-                            transform: ${mobile ? 'translate(-50%, -50%)' : 'translateY(0)'};
+                            transform: translateY(0);
                         }
                     }
 
@@ -352,11 +448,13 @@
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
+                        cursor: move;
                     }
 
                     .translate-panel-title {
                         font-size: ${mobile ? '16px' : '18px'};
                         font-weight: 600;
+                        user-select: none;
                     }
 
                     .translate-panel-close {
@@ -384,9 +482,10 @@
 
                     .translate-panel-body {
                         padding: ${mobile ? '15px' : '20px'};
-                        max-height: ${mobile ? 'calc(85vh - 60px)' : '500px'};
+                        max-height: ${mobile ? '60vh' : '500px'};
                         overflow-y: auto;
                         -webkit-overflow-scrolling: touch;
+                        cursor: default;
                     }
 
                     .translate-panel-body::-webkit-scrollbar {
@@ -412,6 +511,13 @@
                         font-size: 14px;
                         font-weight: 500;
                         color: #333;
+                    }
+
+                    .translate-description {
+                        font-size: 12px;
+                        color: #666;
+                        margin-top: 4px;
+                        font-weight: normal;
                     }
 
                     .translate-switch {
@@ -468,6 +574,7 @@
                         background: white;
                         cursor: pointer;
                         transition: border-color 0.3s;
+                        color: #333;
                     }
 
                     .translate-select:focus {
@@ -539,6 +646,16 @@
                         transform: scale(0.98);
                     }
 
+                    .translate-button-group {
+                        display: flex;
+                        gap: 10px;
+                        margin-bottom: ${mobile ? '15px' : '20px'};
+                    }
+
+                    .translate-button-group .translate-button {
+                        flex: 1;
+                    }
+
                     .translate-section-title {
                         font-size: ${mobile ? '15px' : '16px'};
                         font-weight: 600;
@@ -562,12 +679,6 @@
                     @media (max-width: 768px) {
                         .translate-control-group {
                             margin-bottom: 15px;
-                        }
-                    }
-
-                    @media (min-width: 769px) and (max-width: 1024px) {
-                        #translate-panel {
-                            width: min(400px, 80vw);
                         }
                     }
                 `);
@@ -617,6 +728,7 @@
                 ];
 
                 const mobile = isMobile();
+                const config = this.configManager.config;
 
                 panel.innerHTML = `
                     <div class="translate-panel-header">
@@ -630,7 +742,7 @@
                         <div class="translate-control-group">
                             <label class="translate-control-label">启用翻译</label>
                             <label class="translate-switch">
-                                <input type="checkbox" id="translate-enable" ${this.configManager.get('enabled') ? 'checked' : ''}>
+                                <input type="checkbox" id="translate-enable" ${config.enabled ? 'checked' : ''}>
                                 <span class="translate-switch-slider"></span>
                             </label>
                         </div>
@@ -638,16 +750,19 @@
                         <div class="translate-control-group">
                             <label class="translate-control-label">自动翻译</label>
                             <label class="translate-switch">
-                                <input type="checkbox" id="translate-auto" ${this.configManager.get('autoTranslate') ? 'checked' : ''}>
+                                <input type="checkbox" id="translate-auto" ${config.autoTranslate ? 'checked' : ''}>
                                 <span class="translate-switch-slider"></span>
                             </label>
                         </div>
 
                         <div class="translate-control-group">
-                            <label class="translate-control-label">本地语言</label>
+                            <label class="translate-control-label">
+                                源语言
+                                <div class="translate-description">当前页面的语言</div>
+                            </label>
                             <select class="translate-select" id="translate-local-lang">
                                 ${languages.map(lang => `
-                                    <option value="${lang.value}" ${this.configManager.get('localLanguage') === lang.value ? 'selected' : ''}>
+                                    <option value="${lang.value}" ${config.localLanguage === lang.value ? 'selected' : ''}>
                                         ${lang.name}
                                     </option>
                                 `).join('')}
@@ -655,10 +770,13 @@
                         </div>
 
                         <div class="translate-control-group">
-                            <label class="translate-control-label">目标语言</label>
+                            <label class="translate-control-label">
+                                目标语言
+                                <div class="translate-description">要翻译成什么语言</div>
+                            </label>
                             <select class="translate-select" id="translate-target-lang">
                                 ${languages.map(lang => `
-                                    <option value="${lang.value}" ${this.configManager.get('targetLanguage') === lang.value ? 'selected' : ''}>
+                                    <option value="${lang.value}" ${config.targetLanguage === lang.value ? 'selected' : ''}>
                                         ${lang.name}
                                     </option>
                                 `).join('')}
@@ -671,7 +789,7 @@
                         <div class="translate-control-group">
                             <label class="translate-control-label">显示悬浮球</label>
                             <label class="translate-switch">
-                                <input type="checkbox" id="translate-show-ball" ${this.configManager.get('showFloatBall') ? 'checked' : ''}>
+                                <input type="checkbox" id="translate-show-ball" ${config.showFloatBall ? 'checked' : ''}>
                                 <span class="translate-switch-slider"></span>
                             </label>
                         </div>
@@ -679,7 +797,7 @@
                         <div class="translate-control-group">
                             <label class="translate-control-label">允许悬浮球超出边缘</label>
                             <label class="translate-switch">
-                                <input type="checkbox" id="translate-allow-half" ${this.configManager.get('allowHalfBall') ? 'checked' : ''}>
+                                <input type="checkbox" id="translate-allow-half" ${config.allowHalfBall ? 'checked' : ''}>
                                 <span class="translate-switch-slider"></span>
                             </label>
                         </div>
@@ -688,8 +806,8 @@
                             <label class="translate-control-label">悬浮球大小</label>
                             <div class="translate-slider-container">
                                 <input type="range" class="translate-slider" id="translate-ball-size" 
-                                    min="30" max="80" value="${this.configManager.get('floatBallSize')}">
-                                <span class="translate-slider-value">${this.configManager.get('floatBallSize')}px</span>
+                                    min="30" max="80" value="${config.floatBallSize}">
+                                <span class="translate-slider-value">${config.floatBallSize}px</span>
                             </div>
                         </div>
 
@@ -697,8 +815,26 @@
                             <label class="translate-control-label">悬浮球透明度</label>
                             <div class="translate-slider-container">
                                 <input type="range" class="translate-slider" id="translate-ball-opacity" 
-                                    min="30" max="100" value="${this.configManager.get('floatBallOpacity') * 100}">
-                                <span class="translate-slider-value">${Math.round(this.configManager.get('floatBallOpacity') * 100)}%</span>
+                                    min="30" max="100" value="${config.floatBallOpacity * 100}">
+                                <span class="translate-slider-value">${Math.round(config.floatBallOpacity * 100)}%</span>
+                            </div>
+                        </div>
+
+                        <div class="translate-control-group">
+                            <label class="translate-control-label">控制面板大小</label>
+                            <div class="translate-slider-container">
+                                <input type="range" class="translate-slider" id="translate-panel-size" 
+                                    min="50" max="120" value="${config.panelSize * 100}">
+                                <span class="translate-slider-value">${Math.round(config.panelSize * 100)}%</span>
+                            </div>
+                        </div>
+
+                        <div class="translate-control-group">
+                            <label class="translate-control-label">控制面板透明度</label>
+                            <div class="translate-slider-container">
+                                <input type="range" class="translate-slider" id="translate-panel-opacity" 
+                                    min="50" max="100" value="${config.panelOpacity * 100}">
+                                <span class="translate-slider-value">${Math.round(config.panelOpacity * 100)}%</span>
                             </div>
                         </div>
 
@@ -707,20 +843,52 @@
                             <button class="translate-button" id="translate-now-btn">立即翻译</button>
                         </div>
 
-                        <div class="translate-control-group">
-                            <button class="translate-button" id="translate-reset-btn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-                                重置位置
+                        <div class="translate-button-group">
+                            <button class="translate-button" id="translate-reset-ball-btn" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                                重置悬浮球位置
+                            </button>
+                            <button class="translate-button" id="translate-reset-panel-btn" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                                重置面板位置
                             </button>
                         </div>
 
                         <div class="translate-info">
-                            💡 提示：${mobile ? '长按' : '拖动'}悬浮球可调整位置，设置会自动保存
+                            💡 提示：${mobile ? '长按' : '拖动'}悬浮球或面板标题栏可调整位置，设置会自动保存
                         </div>
                     </div>
                 `;
                 
                 document.body.appendChild(panel);
                 this.panel = panel;
+
+                // 设置面板初始大小和透明度
+                this.updatePanelSize();
+                this.panel.style.opacity = config.panelOpacity;
+
+                // 恢复面板位置
+                if (config.panelPosition) {
+                    this.panel.style.left = `${config.panelPosition.x}px`;
+                    this.panel.style.top = `${config.panelPosition.y}px`;
+                }
+            }
+
+            updatePanelSize() {
+                const mobile = isMobile();
+                const size = this.configManager.get('panelSize');
+                const baseWidth = mobile ? window.innerWidth * 0.9 : 400;
+                const baseHeight = mobile ? window.innerHeight * 0.8 : 600;
+                
+                const width = Math.min(baseWidth * size, mobile ? window.innerWidth * 0.95 : 600);
+                const maxHeight = baseHeight * size;
+                
+                this.panel.style.width = `${width}px`;
+                this.panel.style.maxHeight = `${maxHeight}px`;
+                
+                // 更新body的最大高度
+                const body = this.panel.querySelector('.translate-panel-body');
+                if (body) {
+                    body.style.maxHeight = `${maxHeight - 60}px`;
+                }
             }
 
             bindEvents() {
@@ -733,6 +901,147 @@
                 }
 
                 this.bindCommonEvents();
+                this.bindPanelDragEvents();
+            }
+
+            bindPanelDragEvents() {
+                const header = this.panel.querySelector('.translate-panel-header');
+                const mobile = isMobile();
+
+                if (mobile) {
+                    // 移动端面板拖动
+                    let isDragging = false;
+                    let startX, startY, initialX, initialY;
+                    let longPressTimer = null;
+
+                    header.addEventListener('touchstart', (e) => {
+                        // 如果点击的是关闭按钮，不触发拖动
+                        if (e.target.id === 'translate-panel-close') return;
+                        
+                        const touch = e.touches[0];
+                        startX = touch.clientX;
+                        startY = touch.clientY;
+                        initialX = this.panel.offsetLeft;
+                        initialY = this.panel.offsetTop;
+                        
+                        // 长按300ms后开始拖动
+                        longPressTimer = setTimeout(() => {
+                            isDragging = true;
+                            this.panel.classList.add('dragging');
+                            if (navigator.vibrate) {
+                                navigator.vibrate(50);
+                            }
+                        }, 300);
+                        
+                        e.preventDefault();
+                    });
+
+                    header.addEventListener('touchmove', (e) => {
+                        if (!isDragging) {
+                            // 如果移动了就取消长按
+                            if (longPressTimer) {
+                                const touch = e.touches[0];
+                                const moveDistance = Math.sqrt(
+                                    Math.pow(touch.clientX - startX, 2) + 
+                                    Math.pow(touch.clientY - startY, 2)
+                                );
+                                if (moveDistance > 10) {
+                                    clearTimeout(longPressTimer);
+                                    longPressTimer = null;
+                                }
+                            }
+                            return;
+                        }
+                        
+                        const touch = e.touches[0];
+                        const dx = touch.clientX - startX;
+                        const dy = touch.clientY - startY;
+                        
+                        let newX = initialX + dx;
+                        let newY = initialY + dy;
+                        
+                        // 限制在可视区域内
+                        const maxX = window.innerWidth - this.panel.offsetWidth;
+                        const maxY = window.innerHeight - this.panel.offsetHeight;
+                        
+                        newX = Math.max(0, Math.min(newX, maxX));
+                        newY = Math.max(0, Math.min(newY, maxY));
+                        
+                        this.panel.style.left = `${newX}px`;
+                        this.panel.style.top = `${newY}px`;
+                        
+                        e.preventDefault();
+                    });
+
+                    header.addEventListener('touchend', () => {
+                        if (longPressTimer) {
+                            clearTimeout(longPressTimer);
+                            longPressTimer = null;
+                        }
+                        
+                        if (isDragging) {
+                            isDragging = false;
+                            this.panel.classList.remove('dragging');
+                            
+                            // 保存面板位置
+                            this.configManager.set('panelPosition', {
+                                x: parseInt(this.panel.style.left),
+                                y: parseInt(this.panel.style.top)
+                            });
+                        }
+                    });
+                } else {
+                    // PC端面板拖动
+                    let isDragging = false;
+                    let startX, startY, initialX, initialY;
+
+                    header.addEventListener('mousedown', (e) => {
+                        // 如果点击的是关闭按钮，不触发拖动
+                        if (e.target.id === 'translate-panel-close') return;
+                        
+                        isDragging = true;
+                        startX = e.clientX;
+                        startY = e.clientY;
+                        initialX = this.panel.offsetLeft;
+                        initialY = this.panel.offsetTop;
+                        
+                        this.panel.classList.add('dragging');
+                        e.preventDefault();
+                    });
+
+                    document.addEventListener('mousemove', (e) => {
+                        if (!isDragging) return;
+                        
+                        const dx = e.clientX - startX;
+                        const dy = e.clientY - startY;
+                        
+                        let newX = initialX + dx;
+                        let newY = initialY + dy;
+                        
+                        // 限制在可视区域内
+                        const maxX = window.innerWidth - this.panel.offsetWidth;
+                        const maxY = window.innerHeight - this.panel.offsetHeight;
+                        
+                        newX = Math.max(0, Math.min(newX, maxX));
+                        newY = Math.max(0, Math.min(newY, maxY));
+                        
+                        this.panel.style.left = `${newX}px`;
+                        this.panel.style.top = `${newY}px`;
+                    });
+
+                    document.addEventListener('mouseup', () => {
+                        if (isDragging) {
+                            isDragging = false;
+                            this.panel.classList.remove('dragging');
+                            
+                            // 保存面板位置
+                            this.configManager.set('panelPosition', {
+                                x: parseInt(this.panel.style.left),
+                                y: parseInt(this.panel.style.top)
+                            });
+                        }
+                    });
+                }
             }
 
             bindMobileEvents() {
@@ -949,6 +1258,31 @@
                     });
                 }
 
+                // 控制面板大小滑块
+                const panelSizeSlider = document.getElementById('translate-panel-size');
+                if (panelSizeSlider) {
+                    panelSizeSlider.addEventListener('input', (e) => {
+                        const size = parseInt(e.target.value) / 100;
+                        this.configManager.set('panelSize', size);
+                        this.updatePanelSize();
+                        e.target.nextElementSibling.textContent = `${e.target.value}%`;
+                        
+                        // 确保面板在可视区域内
+                        this.ensurePanelInViewport();
+                    });
+                }
+
+                // 控制面板透明度滑块
+                const panelOpacitySlider = document.getElementById('translate-panel-opacity');
+                if (panelOpacitySlider) {
+                    panelOpacitySlider.addEventListener('input', (e) => {
+                        const opacity = parseInt(e.target.value) / 100;
+                        this.configManager.set('panelOpacity', opacity);
+                        this.panel.style.opacity = opacity;
+                        e.target.nextElementSibling.textContent = `${e.target.value}%`;
+                    });
+                }
+
                 // 立即翻译按钮
                 document.getElementById('translate-now-btn').addEventListener('click', () => {
                     const targetLang = this.configManager.get('targetLanguage');
@@ -956,23 +1290,32 @@
                     this.togglePanel();
                 });
 
-                // 重置位置按钮
-                document.getElementById('translate-reset-btn').addEventListener('click', () => {
+                // 重置悬浮球位置按钮
+                document.getElementById('translate-reset-ball-btn').addEventListener('click', () => {
                     const defaultPosition = { x: 20, y: 100 };
                     this.floatBall.style.left = `${defaultPosition.x}px`;
                     this.floatBall.style.top = `${defaultPosition.y}px`;
                     this.configManager.set('floatBallPosition', defaultPosition);
                 });
 
+                // 重置面板位置按钮
+                document.getElementById('translate-reset-panel-btn').addEventListener('click', () => {
+                    this.configManager.set('panelPosition', null);
+                    this.positionPanel();
+                });
+
                 // 监听窗口大小变化
                 window.addEventListener('resize', () => {
                     this.ensureInViewport();
+                    this.ensurePanelInViewport();
                 });
 
                 // 监听方向变化
                 window.addEventListener('orientationchange', () => {
                     setTimeout(() => {
                         this.ensureInViewport();
+                        this.ensurePanelInViewport();
+                        this.updatePanelSize();
                     }, 300);
                 });
             }
@@ -982,40 +1325,56 @@
                     this.panel.classList.remove('show');
                 } else {
                     this.panel.classList.add('show');
-                    if (!isMobile()) {
+                    const savedPosition = this.configManager.get('panelPosition');
+                    if (!savedPosition) {
                         this.positionPanel();
+                    } else {
+                        this.ensurePanelInViewport();
                     }
                 }
             }
 
             positionPanel() {
-                if (isMobile()) return;
-
-                const ballRect = this.floatBall.getBoundingClientRect();
-                const panelWidth = 400;
-                const panelHeight = 600;
+                const mobile = isMobile();
                 
-                let left = ballRect.right + 10;
-                let top = ballRect.top;
-                
-                if (left + panelWidth > window.innerWidth) {
-                    left = ballRect.left - panelWidth - 10;
+                if (mobile) {
+                    // 移动端居中显示
+                    const panelWidth = this.panel.offsetWidth;
+                    const panelHeight = this.panel.offsetHeight;
+                    
+                    const left = (window.innerWidth - panelWidth) / 2;
+                    const top = (window.innerHeight - panelHeight) / 2;
+                    
+                    this.panel.style.left = `${left}px`;
+                    this.panel.style.top = `${top}px`;
+                } else {
+                    // PC端根据悬浮球位置定位
+                    const ballRect = this.floatBall.getBoundingClientRect();
+                    const panelWidth = this.panel.offsetWidth;
+                    const panelHeight = this.panel.offsetHeight;
+                    
+                    let left = ballRect.right + 10;
+                    let top = ballRect.top;
+                    
+                    if (left + panelWidth > window.innerWidth) {
+                        left = ballRect.left - panelWidth - 10;
+                    }
+                    
+                    if (left < 0) {
+                        left = (window.innerWidth - panelWidth) / 2;
+                    }
+                    
+                    if (top < 10) {
+                        top = 10;
+                    }
+                    
+                    if (top + panelHeight > window.innerHeight - 10) {
+                        top = window.innerHeight - panelHeight - 10;
+                    }
+                    
+                    this.panel.style.left = `${left}px`;
+                    this.panel.style.top = `${top}px`;
                 }
-                
-                if (left < 0) {
-                    left = (window.innerWidth - panelWidth) / 2;
-                }
-                
-                if (top < 10) {
-                    top = 10;
-                }
-                
-                if (top + panelHeight > window.innerHeight - 10) {
-                    top = window.innerHeight - panelHeight - 10;
-                }
-                
-                this.panel.style.left = `${left}px`;
-                this.panel.style.top = `${top}px`;
             }
 
             ensureInViewport() {
@@ -1044,6 +1403,32 @@
                 
                 if (x !== position.x || y !== position.y) {
                     this.configManager.set('floatBallPosition', { x, y });
+                }
+            }
+
+            ensurePanelInViewport() {
+                if (!this.panel.classList.contains('show')) return;
+                
+                const position = this.configManager.get('panelPosition');
+                if (!position) return;
+                
+                const panelWidth = this.panel.offsetWidth;
+                const panelHeight = this.panel.offsetHeight;
+                
+                let x = position.x;
+                let y = position.y;
+                
+                const maxX = window.innerWidth - panelWidth;
+                const maxY = window.innerHeight - panelHeight;
+                
+                x = Math.max(0, Math.min(x, maxX));
+                y = Math.max(0, Math.min(y, maxY));
+                
+                this.panel.style.left = `${x}px`;
+                this.panel.style.top = `${y}px`;
+                
+                if (x !== position.x || y !== position.y) {
+                    this.configManager.set('panelPosition', { x, y });
                 }
             }
         }
