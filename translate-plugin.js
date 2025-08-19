@@ -1,17 +1,88 @@
 // ==UserScript==
-// @name         智能翻译助手
+// @name        智能翻译助手
+// @name:zh-CN  智能翻译助手
+// @name:zh-TW  智能翻譯助手
+// @name:ar     Intelligent Translation Assistant
+// @name:bg     Intelligent Translation Assistant
+// @name:cs     Intelligent Translation Assistant
+// @name:da     Intelligent Translation Assistant
+// @name:de     Intelligent Translation Assistant
+// @name:el     Intelligent Translation Assistant
+// @name:en     Intelligent Translation Assistant
+// @name:eo     Intelligent Translation Assistant
+// @name:es     Intelligent Translation Assistant
+// @name:es-419 Intelligent Translation Assistant
+// @name:fi     Intelligent Translation Assistant
+// @name:fr     Intelligent Translation Assistant
+// @name:fr-CA  Intelligent Translation Assistant
+// @name:he     Intelligent Translation Assistant
+// @name:hr     Intelligent Translation Assistant
+// @name:hu     Intelligent Translation Assistant
+// @name:id     Intelligent Translation Assistant)
+// @name:it     Intelligent Translation Assistant
+// @name:ja     Intelligent Translation Assistant
+// @name:ka     Intelligent Translation Assistant
+// @name:ko     Intelligent Translation Assistant
+// @name:nb     Intelligent Translation Assistant
+// @name:nl     Intelligent Translation Assistant
+// @name:pl     Intelligent Translation Assistant
+// @name:pt-BR  Intelligent Translation Assistant
+// @name:ro     Intelligent Translation Assistant
+// @name:ru     Intelligent Translation Assistant
+// @name:sv     Intelligent Translation Assistant
+// @name:th     Intelligent Translation Assistant
+// @name:tr     Intelligent Translation Assistant
+// @name:uk     Intelligent Translation Assistant
+// @name:ug     Intelligent Translation Assistant
+// @name:vi     Intelligent Translation Assistant
 // @namespace    http://tampermonkey.net/
-// @version      1.1.0
-// @description  功能强大的网页翻译工具，支持多语言，可自定义配置，界面精美，支持移动端
+// @version      1.1.2
+// @description       功能强大的网页翻译工具，支持多语言，可自定义配置，界面精美，支持移动端
+// @description:zh-CN 功能强大的网页翻译工具，支持多语言，可自定义配置，界面精美，支持移动端
+// @description:zh-TW 功能強大的網頁翻譯工具，支援多語言，可自訂配置，介面精美，支援行動端
+// @description:ar    أداة ترجمة ويب قوية، تدعم لغات متعددة، ويمكن تخصيصها، ولها واجهة جميلة، وتدعم الأجهزة المحمولة
+// @description:bg    Мощен инструмент за уеб превод, поддържа множество езици, може да се персонализира, има красив интерфейс и поддържа мобилни терминали
+// @description:cs    Výkonný nástroj pro webový překlad, podporuje více jazyků, lze jej přizpůsobit, má krásné rozhraní a podporuje mobilní terminály
+// @description:da    Kraftfuldt weboversættelsesværktøj, understøtter flere sprog, kan tilpasses, har en flot brugerflade og understøtter mobile terminaler
+// @description:de    Leistungsstarkes Web-Übersetzungstool, unterstützt mehrere Sprachen, kann angepasst werden, hat eine schöne Benutzeroberfläche und unterstützt mobile Endgeräte
+// @description:el    Ισχυρό εργαλείο μετάφρασης ιστοσελίδων, υποστηρίζει πολλές γλώσσες, μπορεί να προσαρμοστεί, έχει όμορφο περιβάλλον εργασίας και υποστηρίζει κινητά τερματικά
+// @description:eo    Potenca rettradukilo, subtenas plurajn lingvojn, povas esti personigita, havas belan interfacon, kaj subtenas porteblajn terminalojn
+// @description:es    Potente herramienta de traducción web, admite varios idiomas, se puede personalizar, tiene una hermosa interfaz y es compatible con terminales móviles.
+// @description:fi    Tehokas verkkokäännöstyökalu, tukee useita kieliä, on muokattavissa, siinä on kaunis käyttöliittymä ja se tukee mobiililaitteita
+// @description:fr    Outil de traduction Web puissant, prend en charge plusieurs langues, peut être personnalisé, possède une belle interface et prend en charge les terminaux mobiles
+// @description:fr-CA Outil de traduction Web puissant, prend en charge plusieurs langues, peut être personnalisé, possède une belle interface et prend en charge les terminaux mobiles
+// @description:he    כלי תרגום אינטרנט עוצמתי, תומך בשפות מרובות, ניתן להתאמה אישית, בעל ממשק יפהפה ותומך במסופים ניידים
+// @description:hr    Moćan alat za web prevođenje, podržava više jezika, može se prilagoditi, ima prekrasno sučelje i podržava mobilne terminale
+// @description:hu    Hatékony weblapfordító eszköz, többnyelvű támogatással, testreszabható beállításokkal, kifinomult felülettel és mobil eszközökre optimalizálva.
+// @description:id    Alat penerjemah situs web yang andal, mendukung multi-bahasa, dapat dikonfigurasi sesuai kebutuhan, antarmuka elegan, dan kompatibel dengan perangkat seluler.
+// @description:it    Uno strumento di traduzione web potente, supporta più lingue, configurabile, con interfaccia raffinata e compatibile con dispositivi mobili.
+// @description:ja    強力なウェブ翻訳ツール。多言語対応、カスタマイズ可能な設定、洗練されたインターフェース、モバイル対応。
+// @description:ka    მძლავრი ვებ-გვერდის თარგმნის ინსტრუმენტი, მრავალენოვანი მხარდაჭერით, კონფიგურირებადი პარამეტრებით, დახვეწილი ინტერფეისით და მობილური მოწყობილობებისთვის მხარდაჭერით.
+// @description:ko    강력한 웹페이지 번역 도구, 다국어 지원, 사용자 정의 설정 가능, 세련된 인터페이스, 모바일 지원.
+// @description:nb    Et kraftig nettstedoversettelsesverktøy som støtter flere språk, kan tilpasses, har et elegant grensesnitt og er egnet for mobilbruk.
+// @description:nl    Een krachtige webvertaaltool, ondersteunt meerdere talen, is aanpasbaar, heeft een verfijnde interface en ondersteuning voor mobiele apparaten.
+// @description:pl    Potężne narzędzie do tłumaczenia stron internetowych, obsługujące wiele języków, konfigurowalne, z eleganckim interfejsem i obsługą urządzeń mobilnych.
+// @description:pt-BR Uma ferramenta de tradução de páginas web poderosa, suporte multilíngue, configurável, interface refinada e compatível com dispositivos móveis.
+// @description:ro    Un instrument puternic de traducere a paginilor web, suportă mai multe limbi, configurabil, cu interfață rafinată și suport pentru dispozitive mobile.
+// @description:ru    Мощный инструмент для перевода веб-страниц, поддерживает множество языков, настраиваемую конфигурацию, изысканный интерфейс и работу на мобильных устройствах.
+// @description:sv    Ett kraftfullt översättningsverktyg för webbsidor, stöder flerspråkighet, anpassningsbara inställningar, sofistikerat gränssnitt och mobilkompatibilitet.
+// @description:th    เครื่องมือแปลเว็บเพจอันทรงพลัง รองรับหลายภาษา สามารถกำหนดค่าต่างๆ ได้เอง มีอินเทอร์เฟซที่สวยงาม และรองรับการทำงานบนมือถือ
+// @description:tr    Güçlü bir web sayfası çeviri aracı, çok dilli destek, özelleştirilebilir yapılandırma, şık arayüz ve mobil cihaz desteği.
+// @description:uk    Потужний інструмент для перекладу веб-сторінок, підтримує багатомовність, налаштування, витончений інтерфейс і сумісність з мобільними пристроями.
+// @description:ug    كۈچلۈك توربەت تەرجىمە قورالى، كۆپ تىلنى قوللايدۇ، سەپلىمە تەڭشىكى، زىنھار ئېغىز كۆرۈنۈشى ۋە تەۋەككۈر ئۈسكۈنىسىنى قوللايدۇ.
+// @description:vi    Công cụ dịch trang web mạnh mẽ, hỗ trợ đa ngôn ngữ, có thể tùy chỉnh cấu hình, giao diện tinh tế và hỗ trợ thiết bị di động.
 // @author       Eray
+// @icon      data:image/png;base64,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
 // @run-at       document-start
 // @match        *://*/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_addStyle
 // @grant        GM_registerMenuCommand
-// @license      Apache-2.0
-// @require      https://unpkg.com/i18n-jsautotranslate@3.18.0/index.js
+// @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
+// @license       Apache-2.0
+// @require       https://unpkg.com/i18n-jsautotranslate@3.18.0/index.js
 // @downloadURL https://update.greasyfork.org/scripts/546362/%E6%99%BA%E8%83%BD%E7%BF%BB%E8%AF%91%E5%8A%A9%E6%89%8B.user.js
 // @updateURL https://update.greasyfork.org/scripts/546362/%E6%99%BA%E8%83%BD%E7%BF%BB%E8%AF%91%E5%8A%A9%E6%89%8B.meta.js
 // ==/UserScript==
@@ -783,6 +854,11 @@
                             </select>
                         </div>
 
+                        <!-- 操作按钮 -->
+                        <div class="translate-control-group" style="margin-top: 25px;">
+                            <button class="translate-button" id="translate-now-btn">立即翻译</button>
+                        </div>
+
                         <!-- 界面设置 -->
                         <div class="translate-section-title" style="margin-top: 25px;">界面设置</div>
 
@@ -836,11 +912,6 @@
                                     min="50" max="100" value="${config.panelOpacity * 100}">
                                 <span class="translate-slider-value">${Math.round(config.panelOpacity * 100)}%</span>
                             </div>
-                        </div>
-
-                        <!-- 操作按钮 -->
-                        <div class="translate-control-group" style="margin-top: 25px;">
-                            <button class="translate-button" id="translate-now-btn">立即翻译</button>
                         </div>
 
                         <div class="translate-button-group">
