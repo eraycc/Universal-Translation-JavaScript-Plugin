@@ -20,14 +20,8 @@ A universal JavaScript translation plug-in script, which can be used through Scr
 ## 安装方法
 
 1. 确保已安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展
-2. 点击[此链接](https://update.greasyfork.org/scripts/546362/智能翻译助手.user.js)安装脚本
+2. 点击[此链接](https://update.greasyfork.org/scripts/546362/智能翻译助手.user.js)安装脚本，或从[主页](https://greasyfork.org/zh-CN/scripts/546362-智能翻译助手)安装
 3. 刷新网页即可使用
-
-## 直接使用
-脚本也可以直接通过script标签引入到网页中即可加载使用
-```
-<script src="https://update.greasyfork.org/scripts/546362/智能翻译助手.user.js"></script>
-```
 
 ## 使用说明
 
