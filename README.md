@@ -1,5 +1,5 @@
 # Universal-Translation-JavaScript-Plugin
-A universal JavaScript translation plug-in script, which can be used through Script Cat or other script running platforms, and can also be directly embedded into web pages.
+A universal JavaScript translation plug-in script, which can be used through Script Cat or other script running platforms.
 
 
 # 智能翻译助手 - Tampermonkey JavaScript脚本
