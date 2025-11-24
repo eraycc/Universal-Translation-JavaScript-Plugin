@@ -71,7 +71,7 @@ A universal JavaScript translation plug-in script, which can be used through Scr
 
 ### 如何自定义翻译术语？
 
-目前版本支持通过脚本配置自定义术语，后续版本将添加UI支持。
+最新版本已支持通过UI设置自定义翻译术语
 
 ### 移动端使用技巧
 
