@@ -87,6 +87,11 @@ A universal JavaScript translation plug-in script, which can be used through Scr
 - 添加悬浮球和控制面板
 - 支持多语言和自定义配置
 
+### v1.3.0
+- 划词翻译改进: 划词翻译独立于"启用翻译"总开关运行——只要 PC 端开启了划词翻译，选中文字即自动按当前源语言→目标语言翻译。
+- 升级 translate.js 到 4.0.0
+- 新增大量自定义功能: 图片翻译、忽略 text/tag、iframe 翻译、整体翻译(whole)、强制翻译本地语种、附加请求参数/headers、自定义标签属性翻译、URL 参数控制、隐藏原文优化、SSE、翻译遮罩层、只翻译指定语种、忽略文字正则等。
+
 ## 反馈与支持
 
 如有任何问题或建议，请联系：
