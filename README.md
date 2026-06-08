@@ -22,6 +22,7 @@ A universal JavaScript translation plug-in script, which can be used through Scr
 1. 确保已安装 [Tampermonkey](https://www.tampermonkey.net/) 浏览器扩展
 2. 点击[此链接](https://update.greasyfork.org/scripts/546362/智能翻译助手.user.js)安装脚本，或从[主页](https://greasyfork.org/zh-CN/scripts/546362-智能翻译助手)安装
 3. 刷新网页即可使用
+> 使用ScriptCat：[脚本猫主页](https://scriptcat.org/zh-CN/script-show-page/5633)，[脚本猫安装链接](https://scriptcat.org/scripts/code/5633/%E6%99%BA%E8%83%BD%E7%BF%BB%E8%AF%91%E5%8A%A9%E6%89%8B.user.js)
 
 ## 使用说明
 
